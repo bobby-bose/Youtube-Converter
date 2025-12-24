@@ -5,6 +5,8 @@ import threading
 import time
 from datetime import datetime
 import re
+import queue
+from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 
@@ -14,6 +16,11 @@ os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 # Store conversion status
 conversion_status = {}
+
+# Queue for batch processing
+batch_queue = queue.Queue()
+processing_lock = threading.Lock()
+batch_results = {}
 
 # Quality settings
 QUALITY_SETTINGS = {
@@ -41,6 +48,50 @@ VIDEO_FORMATS = {
     'mkv': {'ext': 'mkv', 'name': 'MKV'},
     'webm': {'ext': 'webm', 'name': 'WebM'}
 }
+
+def process_batch_urls(batch_id, urls):
+    """Process multiple URLs sequentially"""
+    try:
+        batch_results[batch_id] = {
+            'status': 'processing',
+            'total': len(urls),
+            'current': 0,
+            'results': [],
+            'errors': []
+        }
+        
+        for i, url in enumerate(urls):
+            try:
+                # Update current processing status
+                batch_results[batch_id]['current'] = i + 1
+                
+                # Get video info
+                info = get_video_info(url)
+                if 'error' in info:
+                    batch_results[batch_id]['errors'].append({
+                        'url': url,
+                        'error': info['error']
+                    })
+                else:
+                    batch_results[batch_id]['results'].append({
+                        'url': url,
+                        'info': info
+                    })
+                    
+            except Exception as e:
+                batch_results[batch_id]['errors'].append({
+                    'url': url,
+                    'error': str(e)
+                })
+        
+        # Mark as completed
+        batch_results[batch_id]['status'] = 'completed'
+        
+    except Exception as e:
+        batch_results[batch_id] = {
+            'status': 'error',
+            'error': str(e)
+        }
 
 def get_video_info(video_url):
     """Extract video information and available formats without downloading"""
@@ -325,19 +376,43 @@ def format_file_size(size_bytes):
 def index():
     return render_template('index.html')
 
-@app.route('/get_info', methods=['POST'])
-def get_info():
+@app.route('/get_batch_info', methods=['POST'])
+def get_batch_info():
+    """Process multiple YouTube URLs"""
     data = request.get_json()
-    url = data.get('url')
+    urls_text = data.get('urls', '')
     
-    if not url:
-        return jsonify({'error': 'URL is required'}), 400
+    if not urls_text:
+        return jsonify({'error': 'URLs are required'}), 400
     
-    info = get_video_info(url)
-    if 'error' in info:
-        return jsonify({'error': info['error']}), 400
+    # Parse URLs (one per line)
+    urls = [url.strip() for url in urls_text.split('\n') if url.strip()]
     
-    return jsonify(info)
+    if not urls:
+        return jsonify({'error': 'No valid URLs found'}), 400
+    
+    # Generate batch ID
+    batch_id = f"batch_{int(time.time())}_{len(urls)}"
+    
+    # Start batch processing in background
+    thread = threading.Thread(target=process_batch_urls, args=(batch_id, urls))
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({
+        'batch_id': batch_id,
+        'total_urls': len(urls),
+        'message': f'Processing {len(urls)} URLs...'
+    })
+
+@app.route('/batch_status/<batch_id>')
+def get_batch_status(batch_id):
+    """Get status of batch processing"""
+    status = batch_results.get(batch_id, {
+        'status': 'not_found',
+        'message': 'Batch not found'
+    })
+    return jsonify(status)
 
 @app.route('/get_download_command', methods=['POST'])
 def get_download_command():
