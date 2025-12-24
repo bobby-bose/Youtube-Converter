@@ -43,7 +43,7 @@ VIDEO_FORMATS = {
 }
 
 def get_video_info(video_url):
-    """Extract video information without downloading"""
+    """Extract video information and available formats without downloading"""
     try:
         # Try multiple configurations for PythonAnywhere compatibility
         configs = [
@@ -54,7 +54,12 @@ def get_video_info(video_url):
                 'no_check_certificate': True,
                 'socket_timeout': 60,
                 'retries': 1,
-                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': 'android',
+                    }
+                },
             },
             {
                 'quiet': True,
@@ -63,14 +68,26 @@ def get_video_info(video_url):
                 'no_check_certificate': True,
                 'socket_timeout': 30,
                 'retries': 1,
-                'user_agent': 'yt-dlp',
+                'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': 'ios',
+                    }
+                },
             },
             {
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': False,
+                'no_check_certificate': True,
                 'socket_timeout': 15,
                 'retries': 1,
+                'user_agent': 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': 'android_embedded',
+                    }
+                },
             }
         ]
         
@@ -92,8 +109,36 @@ def get_video_info(video_url):
                     else:
                         duration_str = "Unknown"
                     
-                    # Get file size estimate
+                    # Get available formats
                     formats = info.get('formats', [])
+                    available_formats = []
+                    
+                    # Group formats by quality
+                    audio_formats = []
+                    video_formats = []
+                    
+                    for fmt in formats:
+                        if fmt.get('acodec') != 'none' and fmt.get('vcodec') == 'none':
+                            # Audio only
+                            audio_formats.append({
+                                'format_id': fmt.get('format_id'),
+                                'ext': fmt.get('ext'),
+                                'abr': fmt.get('abr'),
+                                'asr': fmt.get('asr'),
+                                'filesize': fmt.get('filesize')
+                            })
+                        elif fmt.get('vcodec') != 'none':
+                            # Video (with or without audio)
+                            video_formats.append({
+                                'format_id': fmt.get('format_id'),
+                                'ext': fmt.get('ext'),
+                                'height': fmt.get('height'),
+                                'width': fmt.get('width'),
+                                'fps': fmt.get('fps'),
+                                'filesize': fmt.get('filesize')
+                            })
+                    
+                    # Get file size estimate
                     estimated_size = "Unknown"
                     for fmt in formats:
                         if fmt.get('filesize'):
@@ -109,7 +154,12 @@ def get_video_info(video_url):
                         'estimated_size': estimated_size,
                         'uploader': info.get('uploader', 'Unknown'),
                         'view_count': info.get('view_count', 0),
-                        'upload_date': info.get('upload_date', '')
+                        'upload_date': info.get('upload_date', ''),
+                        'available_formats': {
+                            'audio': audio_formats[:5],  # Limit to top 5
+                            'video': video_formats[:10]  # Limit to top 10
+                        },
+                        'webpage_url': info.get('webpage_url', video_url)
                     }
             except Exception as e:
                 if i == len(configs) - 1:  # Last attempt
@@ -140,7 +190,12 @@ def download_media(video_url, output_path, task_id, media_type, quality, format_
                 'socket_timeout': 60,
                 'retries': 1,
                 'fragment_retries': 1,
-                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': 'ios',
+                    }
+                },
             },
             {
                 'format': quality_settings['format'],
@@ -150,15 +205,27 @@ def download_media(video_url, output_path, task_id, media_type, quality, format_
                 'socket_timeout': 30,
                 'retries': 1,
                 'fragment_retries': 1,
-                'user_agent': 'yt-dlp',
+                'user_agent': 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': 'android_embedded',
+                    }
+                },
             },
             {
                 'format': quality_settings['format'],
                 'outtmpl': os.path.join(output_path, f'{task_id}_%(title)s.%(ext)s'),
                 'progress_hooks': [lambda d: update_progress(d, task_id)],
+                'no_check_certificate': True,
                 'socket_timeout': 15,
                 'retries': 1,
                 'fragment_retries': 1,
+                'user_agent': 'Mozilla/5.0 (Android 10; Mobile; rv:91.0) Gecko/91.0 Firefox/91.0',
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': 'android',
+                    }
+                },
             }
         ]
         
@@ -272,8 +339,9 @@ def get_info():
     
     return jsonify(info)
 
-@app.route('/convert', methods=['POST'])
-def convert():
+@app.route('/get_download_command', methods=['POST'])
+def get_download_command():
+    """Generate yt-dlp command for client-side download"""
     data = request.get_json()
     url = data.get('url')
     media_type = data.get('media_type', 'audio')
@@ -283,27 +351,46 @@ def convert():
     if not url:
         return jsonify({'error': 'URL is required'}), 400
     
-    # Generate unique task ID
-    task_id = f"{int(time.time())}_{len(os.listdir(DOWNLOAD_FOLDER))}"
+    # Generate command based on selection
+    if media_type == 'audio':
+        if quality == 'high':
+            quality_flag = '320'
+        elif quality == 'low':
+            quality_flag = '128'
+        else:
+            quality_flag = '192'
+        
+        command = f"yt-dlp -x --audio-format {format_ext} --audio-quality {quality_flag} \"{url}\""
+    elif media_type == 'video':
+        if quality == 'high':
+            format_flag = 'best[height<=1080]'
+        elif quality == 'low':
+            format_flag = 'worst[height<=480]'
+        else:
+            format_flag = 'best[height<=720]'
+        
+        command = f"yt-dlp -f \"{format_flag}[ext={format_ext}]\" \"{url}\""
+    else:  # video_audio
+        if quality == 'high':
+            format_flag = 'best[height<=1080]'
+        elif quality == 'low':
+            format_flag = 'worst[height<=480]'
+        else:
+            format_flag = 'best[height<=720]'
+        
+        command = f"yt-dlp -f \"{format_flag}[ext=mp4]\" \"{url}\""
     
-    # Start download in background thread
-    thread = threading.Thread(target=download_media, args=(url, DOWNLOAD_FOLDER, task_id, media_type, quality, format_ext))
-    thread.daemon = True
-    thread.start()
-    
-    return jsonify({'task_id': task_id})
+    return jsonify({
+        'command': command,
+        'instructions': {
+            'step1': 'Install yt-dlp: pip install yt-dlp',
+            'step2': 'Install FFmpeg for audio/video conversion',
+            'step3': 'Run the command in your terminal',
+            'note': 'Download happens on your computer, not on the server'
+        }
+    })
 
-@app.route('/status/<task_id>')
-def get_status(task_id):
-    status = conversion_status.get(task_id, {'status': 'not_found', 'message': 'Task not found'})
-    return jsonify(status)
-
-@app.route('/download/<task_id>')
-def download_file(task_id):
-    status = conversion_status.get(task_id)
-    if status and status['status'] == 'completed' and 'file_path' in status:
-        return send_file(status['file_path'], as_attachment=True, download_name=status['file_name'])
-    return jsonify({'error': 'File not found or not ready'}), 404
+# Remove server-side download routes - now browser-only
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

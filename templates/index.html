@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Media Converter</title>
+    <title>YouTube Media Converter - Browser Only</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -56,6 +56,17 @@
             text-align: center;
             margin-bottom: 25px;
             font-size: 0.95rem;
+        }
+
+        .browser-only-badge {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 10px;
         }
 
         .url-input {
@@ -205,8 +216,8 @@
             opacity: 0.8;
         }
 
-        .convert-btn {
-            background-color: var(--fb-blue);
+        .generate-command-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
             border: none;
             border-radius: 8px;
             color: white;
@@ -218,110 +229,41 @@
             margin-top: 20px;
         }
 
-        .convert-btn:hover {
-            background-color: var(--fb-dark-blue);
+        .generate-command-btn:hover {
+            background: linear-gradient(45deg, #218838, #1ea085);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
         }
 
-        .convert-btn:disabled {
+        .generate-command-btn:disabled {
             background-color: #ccc;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        /* Modal Styles */
-        .modal-content {
-            border-radius: 12px;
-            border: none;
-        }
-
-        .modal-header {
-            background-color: var(--fb-blue);
-            color: white;
-            border-radius: 12px 12px 0 0;
-            border: none;
-        }
-
-        .modal-body {
-            padding: 30px 20px;
-        }
-
-        .progress-container-modal {
-            margin: 20px 0;
-        }
-
-        .progress {
-            height: 12px;
-            border-radius: 6px;
-            background-color: var(--fb-gray);
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            background: linear-gradient(90deg, var(--fb-blue), var(--fb-dark-blue));
-            border-radius: 6px;
-            transition: width 0.3s ease;
-            position: relative;
-        }
-
-        .progress-bar::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                rgba(255, 255, 255, 0.3),
-                transparent
-            );
-            animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        .status-text {
-            text-align: center;
-            margin-top: 15px;
-            font-weight: 500;
-            color: var(--fb-secondary);
-        }
-
-        .result-container {
+        /* Command Display Styles */
+        .command-container {
             margin-top: 20px;
             padding: 20px;
-            background-color: var(--fb-gray);
+            background-color: #2d3748;
             border-radius: 8px;
             display: none;
         }
 
-        .file-info {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        .command-display {
+            background-color: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            word-break: break-all;
             margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 15px;
+            position: relative;
         }
 
-        .file-details h6 {
-            margin: 0;
-            color: var(--fb-text);
-            font-weight: 600;
-        }
-
-        .file-details small {
-            color: var(--fb-secondary);
-        }
-
-        .download-btn {
+        .copy-btn {
             background-color: var(--fb-blue);
             color: white;
             border: none;
@@ -329,23 +271,54 @@
             padding: 8px 16px;
             font-size: 14px;
             font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .download-btn:hover {
+        .copy-btn:hover {
             background-color: var(--fb-dark-blue);
-            color: white;
-            transform: translateY(-1px);
         }
 
-        .spinner-border {
-            width: 20px;
-            height: 20px;
-            border-width: 2px;
+        .copy-btn.copied {
+            background-color: #28a745;
+        }
+
+        .instructions {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .instructions h6 {
+            color: var(--fb-text);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: var(--fb-secondary);
+        }
+
+        .browser-only-info {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .browser-only-info i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
         }
 
         .fade-in {
@@ -379,11 +352,6 @@
             .format-options {
                 grid-template-columns: 1fr;
             }
-            
-            .file-info {
-                flex-direction: column;
-                text-align: center;
-            }
         }
 
         @media (max-width: 480px) {
@@ -411,8 +379,9 @@
         <div class="converter-card">
             <h1 class="app-title">
                 <i class="fab fa-youtube"></i> YouTube Media Converter
+                <span class="browser-only-badge">Browser Only</span>
             </h1>
-            <p class="app-subtitle">Convert YouTube videos to various audio and video formats</p>
+            <p class="app-subtitle">Get metadata and generate download commands for YouTube videos</p>
 
             <form id="urlForm">
                 <div class="mb-3">
@@ -523,56 +492,30 @@
                     </div>
                 </div>
 
-                <button class="convert-btn" id="convertBtn" disabled>
-                    <i class="fas fa-download"></i> Start Conversion
+                <button class="generate-command-btn" id="generateCommandBtn" disabled>
+                    <i class="fas fa-terminal"></i> Generate Download Command
                 </button>
-            </div>
-        </div>
-    </div>
 
-    <!-- Progress Modal -->
-    <div class="modal fade" id="progressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-download"></i> Converting Media
-                    </h5>
-                </div>
-                <div class="modal-body">
-                    <div class="progress-container-modal">
-                        <div class="progress">
-                            <div class="progress-bar" id="modalProgressBar" role="progressbar" style="width: 0%"></div>
-                        </div>
-                        <div class="status-text" id="modalStatusText">Starting conversion...</div>
+                <div class="command-container" id="commandContainer">
+                    <div class="command-display" id="commandDisplay">
+                        <!-- Command will be displayed here -->
+                    </div>
+                    <button class="copy-btn" id="copyBtn">
+                        <i class="fas fa-copy"></i> Copy Command
+                    </button>
+                    
+                    <div class="instructions">
+                        <h6><i class="fas fa-info-circle"></i> How to Download:</h6>
+                        <ol id="instructionsList">
+                            <!-- Instructions will be populated here -->
+                        </ol>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Result Modal -->
-    <div class="modal fade" id="resultModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-check-circle"></i> Conversion Complete!
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="result-container" style="display: block;">
-                        <div class="file-info">
-                            <div class="file-details">
-                                <h6 id="resultFileTitle">File Title</h6>
-                                <small id="resultFileSize">File Size</small>
-                            </div>
-                            <a href="#" class="download-btn" id="resultDownloadBtn">
-                                <i class="fas fa-download"></i> Download
-                            </a>
-                        </div>
-                    </div>
+                <div class="browser-only-info">
+                    <i class="fas fa-shield-alt"></i>
+                    <strong>Privacy First:</strong> Downloads happen on your computer, not on our servers. 
+                    Your data stays private and secure.
                 </div>
             </div>
         </div>
@@ -580,17 +523,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentTaskId = null;
-        let statusInterval = null;
-        let progressModal = null;
-        let resultModal = null;
+        let currentVideoInfo = null;
         let selectedFormat = null;
-
-        // Initialize modals
-        document.addEventListener('DOMContentLoaded', function() {
-            progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
-            resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
-        });
 
         // URL form submission
         document.getElementById('urlForm').addEventListener('submit', async function(e) {
@@ -615,6 +549,7 @@
                 const data = await response.json();
                 
                 if (response.ok) {
+                    currentVideoInfo = data;
                     showVideoInfo(data);
                 } else {
                     throw new Error(data.error || 'Failed to get video info');
@@ -659,27 +594,24 @@
                     format: option.dataset.format
                 };
                 
-                // Enable convert button
-                document.getElementById('convertBtn').disabled = false;
+                // Enable generate command button
+                document.getElementById('generateCommandBtn').disabled = false;
             }
         });
 
-        // Convert button
-        document.getElementById('convertBtn').addEventListener('click', async function() {
-            if (!selectedFormat) return;
+        // Generate command button
+        document.getElementById('generateCommandBtn').addEventListener('click', async function() {
+            if (!selectedFormat || !currentVideoInfo) return;
             
             const url = document.getElementById('youtubeUrl').value.trim();
             if (!url) return;
 
-            // Show progress modal
-            progressModal.show();
-            
-            // Reset progress
-            document.getElementById('modalProgressBar').style.width = '0%';
-            document.getElementById('modalStatusText').textContent = 'Starting conversion...';
+            const generateBtn = document.getElementById('generateCommandBtn');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating command...';
 
             try {
-                const response = await fetch('/convert', {
+                const response = await fetch('/get_download_command', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -695,70 +627,69 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    currentTaskId = data.task_id;
-                    startStatusPolling();
+                    showCommand(data);
                 } else {
-                    throw new Error(data.error || 'Conversion failed');
+                    throw new Error(data.error || 'Failed to generate command');
                 }
             } catch (error) {
-                progressModal.hide();
                 alert('Error: ' + error.message);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-terminal"></i> Generate Download Command';
             }
         });
 
-        function startStatusPolling() {
-            if (!currentTaskId) return;
-
-            statusInterval = setInterval(async () => {
-                try {
-                    const response = await fetch(`/status/${currentTaskId}`);
-                    const status = await response.json();
-
-                    updateProgress(status);
-
-                    if (status.status === 'completed') {
-                        clearInterval(statusInterval);
-                        showResult(status);
-                    } else if (status.status === 'error') {
-                        clearInterval(statusInterval);
-                        progressModal.hide();
-                        alert('Error: ' + status.message);
-                    }
-                } catch (error) {
-                    console.error('Error checking status:', error);
-                }
-            }, 1000);
+        function showCommand(data) {
+            const commandDisplay = document.getElementById('commandDisplay');
+            const commandContainer = document.getElementById('commandContainer');
+            const instructionsList = document.getElementById('instructionsList');
+            
+            // Display command
+            commandDisplay.textContent = data.command;
+            
+            // Display instructions
+            instructionsList.innerHTML = `
+                <li>${data.instructions.step1}</li>
+                <li>${data.instructions.step2}</li>
+                <li>${data.instructions.step3}</li>
+                <li><strong>Note:</strong> ${data.instructions.note}</li>
+            `;
+            
+            // Show command container
+            commandContainer.style.display = 'block';
+            commandContainer.classList.add('fade-in');
         }
 
-        function updateProgress(status) {
-            const progressBar = document.getElementById('modalProgressBar');
-            const statusText = document.getElementById('modalStatusText');
+        // Copy command functionality
+        document.getElementById('copyBtn').addEventListener('click', function() {
+            const commandText = document.getElementById('commandDisplay').textContent;
+            const copyBtn = document.getElementById('copyBtn');
             
-            if (status.progress !== undefined) {
-                progressBar.style.width = status.progress + '%';
-            }
-            
-            statusText.textContent = status.message || 'Processing...';
-        }
-
-        function showResult(status) {
-            // Hide progress modal
-            progressModal.hide();
-            
-            // Update result modal
-            document.getElementById('resultFileTitle').textContent = status.title || 'Converted Media';
-            document.getElementById('resultFileSize').textContent = status.file_size || 'Unknown size';
-            document.getElementById('resultDownloadBtn').href = `/download/${currentTaskId}`;
-            
-            // Show result modal
-            resultModal.show();
-        }
-
-        // Clean up interval on page unload
-        window.addEventListener('beforeunload', () => {
-            if (statusInterval) {
-                clearInterval(statusInterval);
-            }
+            navigator.clipboard.writeText(commandText).then(function() {
+                copyBtn.classList.add('copied');
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                
+                setTimeout(function() {
+                    copyBtn.classList.remove('copied');
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Command';
+                }, 2000);
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = commandText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                copyBtn.classList.add('copied');
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                
+                setTimeout(function() {
+                    copyBtn.classList.remove('copied');
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Command';
+                }, 2000);
+            });
         });
     </script>
 </body>
