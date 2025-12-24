@@ -52,6 +52,7 @@ VIDEO_FORMATS = {
 def process_batch_urls(batch_id, urls):
     """Process multiple URLs sequentially"""
     try:
+        print(f"Starting batch processing for {len(urls)} URLs")
         batch_results[batch_id] = {
             'status': 'processing',
             'total': len(urls),
@@ -62,32 +63,38 @@ def process_batch_urls(batch_id, urls):
         
         for i, url in enumerate(urls):
             try:
+                print(f"Processing URL {i+1}/{len(urls)}: {url}")
                 # Update current processing status
                 batch_results[batch_id]['current'] = i + 1
                 
                 # Get video info
                 info = get_video_info(url)
                 if 'error' in info:
+                    print(f"Error processing {url}: {info['error']}")
                     batch_results[batch_id]['errors'].append({
                         'url': url,
                         'error': info['error']
                     })
                 else:
+                    print(f"Successfully processed {url}")
                     batch_results[batch_id]['results'].append({
                         'url': url,
                         'info': info
                     })
                     
             except Exception as e:
+                print(f"Exception processing {url}: {str(e)}")
                 batch_results[batch_id]['errors'].append({
                     'url': url,
                     'error': str(e)
                 })
         
         # Mark as completed
+        print(f"Batch processing completed for {batch_id}")
         batch_results[batch_id]['status'] = 'completed'
         
     except Exception as e:
+        print(f"Batch processing failed: {str(e)}")
         batch_results[batch_id] = {
             'status': 'error',
             'error': str(e)
@@ -412,6 +419,7 @@ def get_batch_status(batch_id):
         'status': 'not_found',
         'message': 'Batch not found'
     })
+    print(f"Status check for {batch_id}: {status['status']}")
     return jsonify(status)
 
 @app.route('/get_download_command', methods=['POST'])

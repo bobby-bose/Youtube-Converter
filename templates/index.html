@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Media Converter - Batch Processing</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --fb-blue: #1877f2;
+            --fb-dark-blue: #166fe5;
+            --fb-light-blue: #e7f3ff;
+            --fb-gray: #f0f2f5;
+            --fb-text: #1c1e21;
+            --fb-secondary: #65676b;
+            --fb-card-bg: #ffffff;
+            --fb-border: #e4e6eb;
+        }
+
+        body {
+            background-color: var(--fb-gray);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: var(--fb-text);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .main-container {
+            background: linear-gradient(135deg, var(--fb-blue) 0%, var(--fb-dark-blue) 100%);
+            min-height: 100vh;
+            padding: 20px 15px;
+        }
+
+        .converter-card {
+            background: var(--fb-card-bg);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 30px 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .app-title {
+            color: var(--fb-blue);
+            font-weight: 700;
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .app-subtitle {
+            color: var(--fb-secondary);
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+
+        .batch-badge {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .url-textarea {
+            border: 2px solid var(--fb-border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: 100%;
+            min-height: 120px;
+            resize: vertical;
+            font-family: monospace;
+        }
+
+        .url-textarea:focus {
+            border-color: var(--fb-blue);
+            box-shadow: 0 0 0 3px var(--fb-light-blue);
+            outline: none;
+        }
+
+        .get-info-btn {
+            background-color: var(--fb-blue);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            padding: 12px 24px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .get-info-btn:hover {
+            background-color: var(--fb-dark-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+        }
+
+        .get-info-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .batch-progress {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: var(--fb-gray);
+            border-radius: 8px;
+            display: none;
+        }
+
+        .progress-bar-custom {
+            height: 20px;
+            border-radius: 10px;
+            background-color: #e9ecef;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--fb-blue), var(--fb-dark-blue));
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .videos-container {
+            margin-top: 25px;
+            display: none;
+        }
+
+        .video-card {
+            background: var(--fb-card-bg);
+            border: 1px solid var(--fb-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .video-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .video-header {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .video-thumbnail {
+            width: 120px;
+            height: 90px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .video-details {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .video-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--fb-text);
+        }
+
+        .video-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 0.9rem;
+            color: var(--fb-secondary);
+            margin-bottom: 10px;
+        }
+
+        .video-description {
+            font-size: 0.85rem;
+            color: var(--fb-secondary);
+            line-height: 1.4;
+        }
+
+        .format-section {
+            margin-top: 15px;
+            padding: 15px;
+            border: 1px solid var(--fb-border);
+            border-radius: 8px;
+            background-color: var(--fb-gray);
+        }
+
+        .format-title {
+            font-weight: 600;
+            color: var(--fb-text);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .format-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .format-option {
+            padding: 10px;
+            border: 2px solid var(--fb-border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            background-color: var(--fb-card-bg);
+        }
+
+        .format-option:hover {
+            border-color: var(--fb-blue);
+            background-color: var(--fb-light-blue);
+        }
+
+        .format-option.selected {
+            border-color: var(--fb-blue);
+            background-color: var(--fb-blue);
+            color: white;
+        }
+
+        .format-option i {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .format-option small {
+            font-size: 0.75rem;
+            display: block;
+            opacity: 0.8;
+        }
+
+        .generate-command-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            padding: 12px 24px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .generate-command-btn:hover {
+            background: linear-gradient(45deg, #218838, #1ea085);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .generate-command-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .command-container {
+            margin-top: 15px;
+            padding: 20px;
+            background-color: #2d3748;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .command-display {
+            background-color: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            word-break: break-all;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .copy-btn {
+            background-color: var(--fb-blue);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--fb-dark-blue);
+        }
+
+        .copy-btn.copied {
+            background-color: #28a745;
+        }
+
+        .error-card {
+            background-color: #fee;
+            border: 1px solid #fcc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            color: #c00;
+        }
+
+        .batch-commands {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #2d3748;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .browser-only-info {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .browser-only-info i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .converter-card {
+                padding: 20px 15px;
+            }
+            
+            .app-title {
+                font-size: 1.5rem;
+            }
+            
+            .video-header {
+                flex-direction: column;
+            }
+            
+            .video-thumbnail {
+                width: 100%;
+                height: 200px;
+            }
+            
+            .format-options {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-container {
+                padding: 15px 10px;
+            }
+            
+            .converter-card {
+                padding: 15px 10px;
+            }
+            
+            .app-title {
+                font-size: 1.3rem;
+            }
+            
+            .video-meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="converter-card">
+            <h1 class="app-title">
+                <i class="fab fa-youtube"></i> YouTube Media Converter
+                <span class="batch-badge">Batch Processing</span>
+            </h1>
+            <p class="app-subtitle">Process multiple YouTube URLs at once with queue system</p>
+
+            <form id="batchForm">
+                <div class="mb-3">
+                    <label for="urlsTextarea" class="form-label">
+                        <i class="fas fa-list"></i> YouTube URLs (one per line):
+                    </label>
+                    <textarea class="form-control url-textarea" 
+                              id="urlsTextarea" 
+                              placeholder="https://www.youtube.com/watch?v=..." 
+                              required></textarea>
+                    <small class="text-muted">Enter multiple YouTube URLs, one per line</small>
+                </div>
+                <button type="submit" class="get-info-btn" id="getBatchInfoBtn">
+                    <i class="fas fa-rocket"></i> Process All URLs
+                </button>
+            </form>
+
+            <div class="batch-progress" id="batchProgress">
+                <h6><i class="fas fa-tasks"></i> Processing Progress</h6>
+                <div class="progress-bar-custom">
+                    <div class="progress-bar-fill" id="progressBarFill">0%</div>
+                </div>
+                <div class="mt-2">
+                    <span id="progressText">Processing 0 of 0 URLs...</span>
+                </div>
+            </div>
+
+            <div class="videos-container" id="videosContainer">
+                <!-- Video cards will be populated here -->
+            </div>
+
+            <div class="batch-commands" id="batchCommands">
+                <h6 class="text-white mb-3"><i class="fas fa-terminal"></i> Batch Download Commands</h6>
+                <div id="batchCommandsList">
+                    <!-- Commands will be populated here -->
+                </div>
+            </div>
+
+            <div class="browser-only-info">
+                <i class="fas fa-shield-alt"></i>
+                <strong>Privacy First:</strong> Downloads happen on your computer, not on our servers. 
+                Your data stays private and secure.
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentBatchId = null;
+        let batchStatusInterval = null;
+        let selectedFormats = {};
+
+        // Batch form submission
+        document.getElementById('batchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const urlsText = document.getElementById('urlsTextarea').value.trim();
+            if (!urlsText) return;
+
+            const getBatchBtn = document.getElementById('getBatchInfoBtn');
+            getBatchBtn.disabled = true;
+            getBatchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing URLs...';
+
+            try {
+                const response = await fetch('/get_batch_info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ urls: urlsText })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentBatchId = data.batch_id;
+                    showBatchProgress();
+                    startBatchStatusPolling();
+                } else {
+                    throw new Error(data.error || 'Failed to process URLs');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                getBatchBtn.disabled = false;
+                getBatchBtn.innerHTML = '<i class="fas fa-rocket"></i> Process All URLs';
+            }
+        });
+
+        function showBatchProgress() {
+            const progressContainer = document.getElementById('batchProgress');
+            progressContainer.style.display = 'block';
+            progressContainer.classList.add('fade-in');
+        }
+
+        function startBatchStatusPolling() {
+            if (!currentBatchId) return;
+
+            let pollCount = 0;
+            const maxPolls = 300; // 5 minutes max (300 * 1000ms)
+
+            batchStatusInterval = setInterval(async () => {
+                pollCount++;
+                
+                // Safety timeout
+                if (pollCount > maxPolls) {
+                    clearInterval(batchStatusInterval);
+                    alert('Batch processing timed out. Please try again.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/batch_status/${currentBatchId}`);
+                    const status = await response.json();
+
+                    updateBatchProgress(status);
+
+                    if (status.status === 'completed') {
+                        clearInterval(batchStatusInterval);
+                        showBatchResults(status);
+                    } else if (status.status === 'error') {
+                        clearInterval(batchStatusInterval);
+                        alert('Batch processing error: ' + status.error);
+                    }
+                } catch (error) {
+                    console.error('Error checking batch status:', error);
+                    if (pollCount > 10) { // After 10 failed attempts, stop polling
+                        clearInterval(batchStatusInterval);
+                        alert('Connection error. Please check the server logs.');
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateBatchProgress(status) {
+            const progressBar = document.getElementById('progressBarFill');
+            const progressText = document.getElementById('progressText');
+            
+            if (status.total && status.current !== undefined) {
+                const percentage = Math.round((status.current / status.total) * 100);
+                progressBar.style.width = percentage + '%';
+                progressBar.textContent = percentage + '%';
+                progressText.textContent = `Processing ${status.current} of ${status.total} URLs...`;
+            }
+        }
+
+        function showBatchResults(status) {
+            const videosContainer = document.getElementById('videosContainer');
+            videosContainer.innerHTML = '';
+            videosContainer.style.display = 'block';
+            videosContainer.classList.add('fade-in');
+
+            // Show successful results
+            status.results.forEach((result, index) => {
+                const videoCard = createVideoCard(result.url, result.info, index);
+                videosContainer.appendChild(videoCard);
+            });
+
+            // Show errors
+            status.errors.forEach((error, index) => {
+                const errorCard = createErrorCard(error.url, error.error, index);
+                videosContainer.appendChild(errorCard);
+            });
+        }
+
+        function createVideoCard(url, info, index) {
+            const card = document.createElement('div');
+            card.className = 'video-card fade-in';
+            card.innerHTML = `
+                <div class="video-header">
+                    <img src="${info.thumbnail}" class="video-thumbnail" alt="Video thumbnail">
+                    <div class="video-details">
+                        <h6 class="video-title">${info.title}</h6>
+                        <div class="video-meta">
+                            <span><i class="fas fa-clock"></i> ${info.duration}</span>
+                            <span><i class="fas fa-hdd"></i> ${info.estimated_size}</span>
+                            <span><i class="fas fa-user"></i> ${info.uploader}</span>
+                        </div>
+                        <p class="video-description">${info.description}</p>
+                    </div>
+                </div>
+
+                <!-- Audio Only Section -->
+                <div class="format-section">
+                    <h6 class="format-title">
+                        <i class="fas fa-music"></i> Audio Only
+                    </h6>
+                    <div class="format-options">
+                        <div class="format-option" data-url="${url}" data-index="${index}" data-type="audio" data-quality="high" data-format="mp3">
+                            <i class="fas fa-music"></i>
+                            MP3 High
+                            <small>320 kbps</small>
+                        </div>
+                        <div class="format-option" data-url="${url}" data-index="${index}" data-type="audio" data-quality="medium" data-format="mp3">
+                            <i class="fas fa-music"></i>
+                            MP3 Medium
+                            <small>192 kbps</small>
+                        </div>
+                        <div class="format-option" data-url="${url}" data-index="${index}" data-type="audio" data-quality="low" data-format="mp3">
+                            <i class="fas fa-music"></i>
+                            MP3 Low
+                            <small>128 kbps</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Only Section -->
+                <div class="format-section">
+                    <h6 class="format-title">
+                        <i class="fas fa-video"></i> Video Only
+                    </h6>
+                    <div class="format-options">
+                        <div class="format-option" data-url="${url}" data-index="${index}" data-type="video" data-quality="high" data-format="mp4">
+                            <i class="fas fa-video"></i>
+                            MP4 HD
+                            <small>1080p</small>
+                        </div>
+                        <div class="format-option" data-url="${url}" data-index="${index}" data-type="video" data-quality="medium" data-format="mp4">
+                            <i class="fas fa-video"></i>
+                            MP4 SD
+                            <small>720p</small>
+                        </div>
+                        <div class="format-option" data-url="${url}" data-index="${index}" data-type="video" data-quality="low" data-format="mp4">
+                            <i class="fas fa-video"></i>
+                            MP4 Low
+                            <small>480p</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video + Audio Section -->
+                <div class="format-section">
+                    <h6 class="format-title">
+                        <i class="fas fa-film"></i> Video + Audio
+                    </h6>
+                    <div class="format-options">
+                        <div class="format-option" data-url="${url}" data-index="${index}" data-type="video_audio" data-quality="high" data-format="mp4">
+                            <i class="fas fa-film"></i>
+                            MP4 High
+                            <small>1080p + Audio</small>
+                        </div>
+                        <div class="format-option" data-url="${url}" data-index="${index}" data-type="video_audio" data-quality="medium" data-format="mp4">
+                            <i class="fas fa-film"></i>
+                            MP4 Medium
+                            <small>720p + Audio</small>
+                        </div>
+                        <div class="format-option" data-url="${url}" data-index="${index}" data-type="video_audio" data-quality="low" data-format="mp4">
+                            <i class="fas fa-film"></i>
+                            MP4 Low
+                            <small>480p + Audio</small>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="generate-command-btn" onclick="generateCommandForVideo(${index})">
+                    <i class="fas fa-terminal"></i> Generate Download Command
+                </button>
+
+                <div class="command-container" id="commandContainer_${index}">
+                    <div class="command-display" id="commandDisplay_${index}">
+                        <!-- Command will be displayed here -->
+                    </div>
+                    <button class="copy-btn" onclick="copyCommand(${index})">
+                        <i class="fas fa-copy"></i> Copy Command
+                    </button>
+                </div>
+            `;
+            return card;
+        }
+
+        function createErrorCard(url, error, index) {
+            const card = document.createElement('div');
+            card.className = 'error-card fade-in';
+            card.innerHTML = `
+                <h6><i class="fas fa-exclamation-triangle"></i> Error Processing URL</h6>
+                <p><strong>URL:</strong> ${url}</p>
+                <p><strong>Error:</strong> ${error}</p>
+            `;
+            return card;
+        }
+
+        // Format selection
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.format-option')) {
+                const option = e.target.closest('.format-option');
+                const videoIndex = option.dataset.index;
+                
+                // Remove previous selection for this video
+                document.querySelectorAll(`.format-option[data-index="${videoIndex}"]`).forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                
+                // Add selection to clicked option
+                option.classList.add('selected');
+                
+                // Store selected format
+                selectedFormats[videoIndex] = {
+                    url: option.dataset.url,
+                    type: option.dataset.type,
+                    quality: option.dataset.quality,
+                    format: option.dataset.format
+                };
+            }
+        });
+
+        async function generateCommandForVideo(index) {
+            const format = selectedFormats[index];
+            if (!format) {
+                alert('Please select a format first');
+                return;
+            }
+
+            try {
+                const response = await fetch('/get_download_command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(format)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showCommandForVideo(index, data);
+                } else {
+                    throw new Error(data.error || 'Failed to generate command');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function showCommandForVideo(index, data) {
+            const commandDisplay = document.getElementById(`commandDisplay_${index}`);
+            const commandContainer = document.getElementById(`commandContainer_${index}`);
+            
+            commandDisplay.textContent = data.command;
+            commandContainer.style.display = 'block';
+            commandContainer.classList.add('fade-in');
+        }
+
+        function copyCommand(index) {
+            const commandText = document.getElementById(`commandDisplay_${index}`).textContent;
+            const copyBtn = document.querySelector(`#commandContainer_${index} .copy-btn`);
+            
+            navigator.clipboard.writeText(commandText).then(function() {
+                copyBtn.classList.add('copied');
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                
+                setTimeout(function() {
+                    copyBtn.classList.remove('copied');
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Command';
+                }, 2000);
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = commandText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                copyBtn.classList.add('copied');
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                
+                setTimeout(function() {
+                    copyBtn.classList.remove('copied');
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Command';
+                }, 2000);
+            });
+        }
+
+        // Clean up interval on page unload
+        window.addEventListener('beforeunload', () => {
+            if (batchStatusInterval) {
+                clearInterval(batchStatusInterval);
+            }
+        });
+    </script>
+</body>
+</html>
