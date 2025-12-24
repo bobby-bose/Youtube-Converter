@@ -45,54 +45,79 @@ VIDEO_FORMATS = {
 def get_video_info(video_url):
     """Extract video information without downloading"""
     try:
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-            'extract_flat': False,
-            # Proxy configuration for PythonAnywhere
-            'proxy_url': '',
-            'socket_timeout': 60,
-            'no_check_certificate': True,
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        }
-        
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(video_url, download=False)
-            
-            # Format duration
-            duration = info.get('duration', 0)
-            if duration:
-                hours = duration // 3600
-                minutes = (duration % 3600) // 60
-                seconds = duration % 60
-                if hours > 0:
-                    duration_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                else:
-                    duration_str = f"{minutes:02d}:{seconds:02d}"
-            else:
-                duration_str = "Unknown"
-            
-            # Get file size estimate
-            formats = info.get('formats', [])
-            estimated_size = "Unknown"
-            for fmt in formats:
-                if fmt.get('filesize'):
-                    estimated_size = format_file_size(fmt['filesize'])
-                    break
-            
-            return {
-                'title': info.get('title', 'Unknown Title'),
-                'description': info.get('description', 'No description available')[:200] + '...' if info.get('description') else 'No description available',
-                'thumbnail': info.get('thumbnail', ''),
-                'duration': duration_str,
-                'duration_seconds': duration,
-                'estimated_size': estimated_size,
-                'uploader': info.get('uploader', 'Unknown'),
-                'view_count': info.get('view_count', 0),
-                'upload_date': info.get('upload_date', '')
+        # Try multiple configurations for PythonAnywhere compatibility
+        configs = [
+            {
+                'quiet': True,
+                'no_warnings': True,
+                'extract_flat': False,
+                'no_check_certificate': True,
+                'socket_timeout': 60,
+                'retries': 1,
+                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            },
+            {
+                'quiet': True,
+                'no_warnings': True,
+                'extract_flat': False,
+                'no_check_certificate': True,
+                'socket_timeout': 30,
+                'retries': 1,
+                'user_agent': 'yt-dlp',
+            },
+            {
+                'quiet': True,
+                'no_warnings': True,
+                'extract_flat': False,
+                'socket_timeout': 15,
+                'retries': 1,
             }
+        ]
+        
+        for i, ydl_opts in enumerate(configs):
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(video_url, download=False)
+                    
+                    # Format duration
+                    duration = info.get('duration', 0)
+                    if duration:
+                        hours = duration // 3600
+                        minutes = (duration % 3600) // 60
+                        seconds = duration % 60
+                        if hours > 0:
+                            duration_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                        else:
+                            duration_str = f"{minutes:02d}:{seconds:02d}"
+                    else:
+                        duration_str = "Unknown"
+                    
+                    # Get file size estimate
+                    formats = info.get('formats', [])
+                    estimated_size = "Unknown"
+                    for fmt in formats:
+                        if fmt.get('filesize'):
+                            estimated_size = format_file_size(fmt['filesize'])
+                            break
+                    
+                    return {
+                        'title': info.get('title', 'Unknown Title'),
+                        'description': info.get('description', 'No description available')[:200] + '...' if info.get('description') else 'No description available',
+                        'thumbnail': info.get('thumbnail', ''),
+                        'duration': duration_str,
+                        'duration_seconds': duration,
+                        'estimated_size': estimated_size,
+                        'uploader': info.get('uploader', 'Unknown'),
+                        'view_count': info.get('view_count', 0),
+                        'upload_date': info.get('upload_date', '')
+                    }
+            except Exception as e:
+                if i == len(configs) - 1:  # Last attempt
+                    raise e
+                continue
+                
     except Exception as e:
-        return {'error': str(e)}
+        return {'error': f'Network/Proxy Error: {str(e)}'}
 
 def download_media(video_url, output_path, task_id, media_type, quality, format_ext='mp3'):
     """Downloads YouTube video and converts to specified format"""
@@ -105,69 +130,101 @@ def download_media(video_url, output_path, task_id, media_type, quality, format_
         else:
             quality_settings = {'format': 'bestaudio/best', 'preferredquality': '192'}
         
-        # Configure yt-dlp options
-        ydl_opts = {
-            'format': quality_settings['format'],
-            'outtmpl': os.path.join(output_path, f'{task_id}_%(title)s.%(ext)s'),
-            'progress_hooks': [lambda d: update_progress(d, task_id)],
-            # Proxy configuration for PythonAnywhere
-            'proxy_url': '',
-            'socket_timeout': 60,
-            'retries': 3,
-            'fragment_retries': 3,
-            'no_check_certificate': True,
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        }
+        # Try multiple configurations for PythonAnywhere compatibility
+        configs = [
+            {
+                'format': quality_settings['format'],
+                'outtmpl': os.path.join(output_path, f'{task_id}_%(title)s.%(ext)s'),
+                'progress_hooks': [lambda d: update_progress(d, task_id)],
+                'no_check_certificate': True,
+                'socket_timeout': 60,
+                'retries': 1,
+                'fragment_retries': 1,
+                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            },
+            {
+                'format': quality_settings['format'],
+                'outtmpl': os.path.join(output_path, f'{task_id}_%(title)s.%(ext)s'),
+                'progress_hooks': [lambda d: update_progress(d, task_id)],
+                'no_check_certificate': True,
+                'socket_timeout': 30,
+                'retries': 1,
+                'fragment_retries': 1,
+                'user_agent': 'yt-dlp',
+            },
+            {
+                'format': quality_settings['format'],
+                'outtmpl': os.path.join(output_path, f'{task_id}_%(title)s.%(ext)s'),
+                'progress_hooks': [lambda d: update_progress(d, task_id)],
+                'socket_timeout': 15,
+                'retries': 1,
+                'fragment_retries': 1,
+            }
+        ]
         
-        # Add post-processors for audio conversion
-        if media_type == 'audio':
-            ydl_opts['postprocessors'] = [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': format_ext,
-                'preferredquality': quality_settings.get('preferredquality', '192'),
-            }]
-        elif media_type in ['video', 'video_audio'] and format_ext != 'mp4':
-            # For non-MP4 video formats, we need to convert
-            ydl_opts['postprocessors'] = [{
-                'key': 'FFmpegVideoConvertor',
-                'preferedformat': format_ext,
-            }]
-        
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Extract info first
-            info = ydl.extract_info(video_url, download=False)
-            title = info.get('title', 'Unknown Title')
-            
-            conversion_status[task_id].update({
-                'status': 'downloading',
-                'message': f'Downloading: {title}',
-                'title': title
-            })
-            
-            # Download and convert
-            ydl.download([video_url])
-            
-            # Find the converted file
-            for file in os.listdir(output_path):
-                if file.startswith(task_id):
-                    file_path = os.path.join(output_path, file)
-                    file_size = os.path.getsize(file_path)
+        for i, base_opts in enumerate(configs):
+            try:
+                ydl_opts = base_opts.copy()
+                
+                # Add post-processors for audio conversion
+                if media_type == 'audio':
+                    ydl_opts['postprocessors'] = [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': format_ext,
+                        'preferredquality': quality_settings.get('preferredquality', '192'),
+                    }]
+                elif media_type in ['video', 'video_audio'] and format_ext != 'mp4':
+                    # For non-MP4 video formats, we need to convert
+                    ydl_opts['postprocessors'] = [{
+                        'key': 'FFmpegVideoConvertor',
+                        'preferedformat': format_ext,
+                    }]
+                
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    # Extract info first
+                    info = ydl.extract_info(video_url, download=False)
+                    title = info.get('title', 'Unknown Title')
                     
-                    # Clean filename for download
-                    clean_filename = file.replace(f'{task_id}_', '')
+                    conversion_status[task_id].update({
+                        'status': 'downloading',
+                        'message': f'Downloading: {title}',
+                        'title': title
+                    })
                     
+                    # Download and convert
+                    ydl.download([video_url])
+                    
+                    # Find the converted file
+                    for file in os.listdir(output_path):
+                        if file.startswith(task_id):
+                            file_path = os.path.join(output_path, file)
+                            file_size = os.path.getsize(file_path)
+                            
+                            # Clean filename for download
+                            clean_filename = file.replace(f'{task_id}_', '')
+                            
+                            conversion_status[task_id] = {
+                                'status': 'completed',
+                                'progress': 100,
+                                'message': 'Conversion complete!',
+                                'file_path': file_path,
+                                'file_name': clean_filename,
+                                'file_size': format_file_size(file_size),
+                                'title': title,
+                                'media_type': media_type,
+                                'quality': quality
+                            }
+                            return
+                            
+            except Exception as e:
+                if i == len(configs) - 1:  # Last attempt
                     conversion_status[task_id] = {
-                        'status': 'completed',
-                        'progress': 100,
-                        'message': 'Conversion complete!',
-                        'file_path': file_path,
-                        'file_name': clean_filename,
-                        'file_size': format_file_size(file_size),
-                        'title': title,
-                        'media_type': media_type,
-                        'quality': quality
+                        'status': 'error',
+                        'progress': 0,
+                        'message': f'Network/Proxy Error: Unable to connect to YouTube. This may be due to hosting provider restrictions. Error: {str(e)}'
                     }
-                    break
+                else:
+                    continue
                     
     except Exception as e:
         conversion_status[task_id] = {
