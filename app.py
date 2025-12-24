@@ -49,6 +49,11 @@ def get_video_info(video_url):
             'quiet': True,
             'no_warnings': True,
             'extract_flat': False,
+            # Proxy configuration for PythonAnywhere
+            'proxy_url': '',
+            'socket_timeout': 60,
+            'no_check_certificate': True,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -105,6 +110,13 @@ def download_media(video_url, output_path, task_id, media_type, quality, format_
             'format': quality_settings['format'],
             'outtmpl': os.path.join(output_path, f'{task_id}_%(title)s.%(ext)s'),
             'progress_hooks': [lambda d: update_progress(d, task_id)],
+            # Proxy configuration for PythonAnywhere
+            'proxy_url': '',
+            'socket_timeout': 60,
+            'retries': 3,
+            'fragment_retries': 3,
+            'no_check_certificate': True,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         }
         
         # Add post-processors for audio conversion
@@ -237,4 +249,5 @@ def download_file(task_id):
     return jsonify({'error': 'File not found or not ready'}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
